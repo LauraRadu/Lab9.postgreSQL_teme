@@ -1,0 +1,78 @@
+CREATE TABLE users
+(
+  nume character(20),
+  id bigint NOT NULL DEFAULT nextval('user_id_seq'::regclass),
+  parola character(20) NOT NULL,
+  varsta integer,
+  oras character(30),
+  blocat boolean NOT NULL,
+  CONSTRAINT pkuser PRIMARY KEY (id)
+)
+
+CREATE TABLE postari
+(
+  id bigserial NOT NULL,
+  continut character(200),
+  data date,
+  fk_user bigint,
+  CONSTRAINT pk PRIMARY KEY (id),
+  CONSTRAINT fk FOREIGN KEY (fk_user)
+      REFERENCES users (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+
+--C2. Sa se afiseze toate postarile lui Ionel …adica datele din tabela postare  unde fkuser este id-ul username-ului Ionel din tabela user …da:)ca nu va iese treceti la 3
+SELECT p.continut FROM postari p
+JOIN users u ON p.fk_user=u.id
+WHERE u.nume='ionel'
+
+--C3. Sa se afiseze toti userii
+SELECT * FROM users;
+
+--C4. Sa se afiseze toti userii care nu sunt blocati
+SELECT * FROM users WHERE blocat='f';
+SELECT * FROM users WHERE NOT blocat='t';
+
+--C5. Sa se afiseze userul cu varsta cea mai mica
+SELECT nume,varsta FROM users
+WHERE varsta=(SELECT MIN(varsta) FROM users);
+
+--C6. Sa se afiseze userii cu varsta intre 23 si 33 de ani , ordonati dupa varsta
+SELECT * FROM users
+WHERE varsta>23 AND varsta<33
+ORDER BY varsta;
+
+--C7. sa se afizeze media varstei userilor blocati
+SELECT avg(varsta) AS "Media varstelor"
+FROM users
+WHERE blocat='t';
+
+--C8.  sa se afiseze userii neblocati din dej
+SELECT * FROM users
+WHERE blocat='f' AND oras='dej';
+
+--C9. sa se afiseze postarile userilor neblocati din turda care au varsta peste 40 de ani
+SELECT p.continut,u.nume,u.varsta,u.oras FROM postari p
+INNER JOIN users u ON p.fk_user=u.id
+WHERE u.blocat='f' AND varsta>40;
+
+--C10. sa sa afiseze userul cu cele mai multe postari
+SELECT u.nume FROM users u
+INNER JOIN postari p ON u.id=p.fk_user
+GROUP BY u.nume
+ORDER BY COUNT(p.continut) DESC
+LIMIT 1;
+
+--C11. sa se afiseze postarile userilor care incep cu numele D si sunt postate intre 1 si 31 martie 2016
+SELECT p.continut,u.nume,p.data FROM postari p
+INNER JOIN users u ON p.fk_user=u.id
+WHERE u.nume LIKE 'd%' AND (p.data>'2016-03-01' AND p.data<'2016-03-31');
+
+--C12. sa se afiseze postarile ordonate dupa data postarii descendent, indiferent de user
+SELECT continut,data FROM postari
+ORDER BY data DESC;
+
+--C13. sa se stearga postarile userilor sub 18 ani care contin  textul ‘politica’
+DELETE FROM postari p
+USING users u
+WHERE p.fk_user=u.id AND u.varsta<18 AND p.continut LIKE '%politica%';
